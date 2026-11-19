@@ -148,8 +148,8 @@ function feedByDay(items, empty) {
 }
 function emptyState(title, text) { return `<div class="empty"><strong>${esc(title)}</strong>${esc(text)}</div>`; }
 const NO_DATA = () => emptyState("სიახლეები ჯერ არ არის", S.meta.updated
-  ? "ამ განყოფილებაში ჯერ არაფერია. ახალი სიახლეები ყოველ 30 წუთში მოწმდება."
-  : "პირველი განახლება მალე მოვა: სიახლეები ყოველ 30 წუთში მოწმდება.");
+  ? "ამ განყოფილებაში ჯერ არაფერია. სიახლეები დღეში 3-ჯერ მოწმდება: 09:00, 13:00 და 20:00."
+  : "პირველი განახლება მალე მოვა. სიახლეები დღეში 3-ჯერ მოწმდება: 09:00, 13:00 და 20:00.");
 
 // ---------------------------------------------------------------- views
 const news = () => S.items.filter((i) => i.section === "news");
@@ -274,7 +274,8 @@ function vAbout() {
   const upd = S.meta.updated ? `${dayLabel(dayKey(S.meta.updated))}, ${tbParts(new Date(S.meta.updated)).hh}:${tbParts(new Date(S.meta.updated)).mm}` : "ჯერ არ განახლებულა";
   return `<button class="back" type="button" data-back>← უკან</button><h2 class="section-title">🔔 შეტყობინებები და წყაროები</h2>
   <div class="info"><h3>შეტყობინებები (ntfy)</h3><ul>
-    <li>🔴 <b>მყისიერი</b>: მხოლოდ დიდ გამოშვებებზე (ახალი მთავარი მოდელი, დიდი პროდუქტი).</li>
+    <li>🔄 <b>განახლება</b>: დღეში 3-ჯერ, 09:00, 13:00 და 20:00-ზე.</li>
+    <li>🔴 <b>მთავარი სიახლე</b>: დიდ გამოშვებაზე ცალკე შეტყობინება, უახლოეს განახლებაზე.</li>
     <li>📰 <b>დღის შეჯამება</b>: ყოველდღე 13:00-ზე.</li>
     <li>🗓 <b>კვირის შეჯამება</b>: კვირას 20:00-ზე.</li>
     <li>🌙 <b>ჩუმი საათები</b>: 00:00–09:00. ღამის სიახლე დილის 9-ზე მოვა.</li></ul></div>

@@ -6,7 +6,7 @@ AI-ს მთავარი სიახლეები ქართულა�
 - collects what people build with AI (Reddit, Hacker News, Product Hunt, GitHub Trending)
 - filters out noise and summarizes everything in Georgian with Gemini (free tier)
 - adds a "💼 შენთვის" line: how you could use it in your own work (see `config/profile.md`)
-- sends phone notifications through **ntfy**: instant alerts for big launches, a daily digest at 13:00, a weekly recap on Sunday 20:00, quiet hours 00:00–09:00 (Tbilisi time)
+- checks for news 3 times a day (09:00, 13:00, 20:00 Tbilisi) and sends phone notifications through **ntfy**: a separate alert for big launches, a daily digest at 13:00, a weekly recap on Sunday 20:00
 
 Everything runs for free on GitHub Actions + GitHub Pages.
 
@@ -23,7 +23,7 @@ Everything runs for free on GitHub Actions + GitHub Pages.
    `https://<your-github-username-lowercase>.github.io/AI_News/`.
 6. **Install on iPhone.** Open that link in Safari → Share → **Add to Home Screen**.
 
-From then on it updates every 30 minutes by itself.
+From then on it updates by itself 3 times a day: 09:00, 13:00 and 20:00 Tbilisi time. To change the times, edit the `cron` line in `.github/workflows/update.yml` (times there are UTC = Tbilisi − 4h).
 
 ### Optional
 
@@ -35,7 +35,7 @@ From then on it updates every 30 minutes by itself.
 ## How it works
 
 ```
-GitHub Actions (every 30 min)
+GitHub Actions (09:00, 13:00, 20:00 Tbilisi)
   pipeline/fetch.py    -> collect from sources in pipeline/sources.py
   pipeline/prompts.py  -> Gemini: keep / drop, importance, duplicates
                        -> Gemini: Georgian card (bullets, why, for-you, details, numbers, term)

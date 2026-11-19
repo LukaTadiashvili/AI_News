@@ -2,7 +2,10 @@ name: Update AI News
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # every 30 minutes (GitHub may delay a few minutes)
+    # 3 times a day, Tbilisi time (UTC+4): 09:02, 13:02, 20:02.
+    # The 13:02 run also sends the daily digest; Sunday 20:02 sends the weekly recap.
+    # GitHub may start scheduled runs 5-15 minutes late.
+    - cron: "2 5,9,16 * * *"
   workflow_dispatch: {}      # "Run workflow" button
   push:
     branches: [main]

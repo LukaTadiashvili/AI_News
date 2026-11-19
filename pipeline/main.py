@@ -1,6 +1,6 @@
 """AI News pipeline: collect -> filter -> summarize (Georgian) -> save -> notify.
 
-Run every ~30 min by GitHub Actions. Safe to run as often as you like:
+Run 3 times a day by GitHub Actions (09:00, 13:00, 20:00 Tbilisi). Safe to run as often as you like:
 already-seen items are skipped and notifications are sent once.
 """
 from __future__ import annotations
