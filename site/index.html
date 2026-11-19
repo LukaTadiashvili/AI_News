@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI News</title>
+<meta name="description" content="AI-ს მთავარი სიახლეები ქართულად, მოკლედ.">
+<meta name="theme-color" content="#0D1016" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F3F5F8" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AI News">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Space+Grotesk:wght@600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="app-head">
+  <div class="head-row">
+    <a class="brand" href="#today">AI <b>News</b></a>
+    <span class="date" id="today-date"></span>
+    <button class="icon-btn" id="refresh" type="button" aria-label="განახლება">↻</button>
+    <button class="icon-btn" id="menu-btn" type="button" aria-label="მენიუ" aria-expanded="false">☰</button>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="განყოფილებები">
+    <a class="tab" href="#today" data-tab="today">დღეს</a>
+    <a class="tab" href="#models" data-tab="models">მოდელები</a>
+    <a class="tab" href="#tools" data-tab="tools">ინსტრუმენტები</a>
+    <a class="tab" href="#community" data-tab="community">საზოგადოება</a>
+    <a class="tab" href="#saved" data-tab="saved">შენახული</a>
+  </nav>
+</header>
+
+<main id="view" tabindex="-1"><p class="loading">იტვირთება…</p></main>
+
+<div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+<aside class="sheet" id="sheet" hidden aria-label="მენიუ">
+  <div class="sheet-grip"></div>
+  <a href="#catchup" class="sheet-link"><span>⏪</span><span><strong>დამეწიე</strong><small>რაც გამოგრჩა, ერთ სიაში</small></span></a>
+  <a href="#weekly" class="sheet-link"><span>🗓</span><span><strong>კვირის შეჯამება</strong><small>კვირის 5 მთავარი ამბავი</small></span></a>
+  <a href="#versions" class="sheet-link"><span>🧭</span><span><strong>ვერსიების ისტორია</strong><small>Claude Code, Codex, Cursor…</small></span></a>
+  <a href="#leaderboard" class="sheet-link"><span>🏆</span><span><strong>მოდელების რეიტინგი</strong><small>ფასი, კონტექსტი, რაში ჯობია</small></span></a>
+  <a href="#glossary" class="sheet-link"><span>📖</span><span><strong>ტერმინების ლექსიკონი</strong><small>რთული სიტყვები მარტივად</small></span></a>
+  <a href="#about" class="sheet-link"><span>🔔</span><span><strong>შეტყობინებები და წყაროები</strong><small>როდის და საიდან მოდის სიახლე</small></span></a>
+</aside>
+
+<div class="term-pop" id="term-pop" role="dialog" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
