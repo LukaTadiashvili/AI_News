@@ -4,6 +4,7 @@ import json
 from sources import COMMUNITY_TOPICS
 
 STYLE = """Writing style for ALL Georgian text:
+- Use ONLY the Georgian alphabet (ა-ჰ) for Georgian words, never letters from other scripts (no Hebrew, Armenian, Cyrillic).
 - Natural, modern, simple Georgian, like a smart friend explaining it. Short sentences. No filler, no hype words.
 - Keep product, model, company and feature names in English (Claude Code, GPT-6, Power BI, n8n).
 - Be concrete: numbers, versions, prices, what exactly changed. Never invent facts that are not in the source.
