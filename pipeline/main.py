@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -31,8 +32,10 @@ WEEKLY_DAY, WEEKLY_HOUR = 6, 20    # Sunday 20:00 Tbilisi
 COMMUNITY_EVERY = timedelta(hours=3)
 MAX_AGE = timedelta(days=5)        # ignore older posts from feeds
 KEEP_ITEMS = timedelta(days=120)
-MAX_SUMMARIES = {"news": 12, "community": 8}
-TRIAGE_BATCH = 40
+MAX_SUMMARIES = {"news": 10, "community": 6}
+SUMMARY_BATCH = 5                  # cards per Gemini call
+TRIAGE_BATCH = 90
+TIME_BUDGET = 14 * 60              # stop summarizing after 14 min, save, finish
 
 
 def log(*a):
@@ -199,6 +202,7 @@ def weekly_recap(items, weekly, state, now):
 
 # ---------------------------------------------------------------- main flow
 def run(dry_run=False, now=None):
+    started = time.time()
     now = now or datetime.now(TZ)
     state = load(STATE_FILE, {})
     state.setdefault("seen", {})
@@ -246,7 +250,7 @@ def run(dry_run=False, now=None):
     # 2. triage
     profile = profile_text()
     recent = [{"id": i["id"], "title": i.get("title_en") or i["title_ka"]} for i in items[:60]]
-    decisions = {}
+    decisions, triaged = {}, False
     for k in range(0, len(cands), TRIAGE_BATCH):
         batch = cands[k:k + TRIAGE_BATCH]
         try:
@@ -254,6 +258,7 @@ def run(dry_run=False, now=None):
         except gemini.GeminiError as ex:
             log("triage failed:", ex)
             break
+        triaged = True
         rows = res.get("results", res) if isinstance(res, dict) else res
         for r in rows if isinstance(rows, list) else []:
             if isinstance(r, dict) and r.get("id") in uniq:
@@ -261,41 +266,59 @@ def run(dry_run=False, now=None):
         for c in batch:
             state["seen"][c["id"]] = now.isoformat()
 
-    # 3. summarize what passed
+    # 3. summarize what passed (several cards per Gemini call to save free-tier quota)
     existing = {i["id"]: i for i in items}
-    kept = [c for c in cands if decisions.get(c["id"], {}).get("keep")]
-    kept.sort(key=lambda c: -int(decisions[c["id"]].get("importance") or 0))
-    done = {"news": 0, "community": 0}
-    new_items = []
-    for c in kept:
-        d = decisions[c["id"]]
+    queue = [p for p in state.get("pending_summaries", []) if p["cand"]["id"] not in existing]
+    queued_ids = {p["cand"]["id"] for p in queue}
+    for c in cands:
+        d = decisions.get(c["id"], {})
+        if not d.get("keep") or c["id"] in queued_ids:
+            continue
         dup = d.get("duplicate_of")
         if dup in existing:
             also = existing[dup].setdefault("also", [])
-            if c["url"] not in [a["url"] for a in also]:
+            if c["url"] not in [x["url"] for x in also]:
                 also.append({"source": c["source"], "url": c.get("link") or c["url"]})
             continue
-        if done[c["section"]] >= MAX_SUMMARIES[c["section"]]:
-            continue
-        text = fetch.article_text(c)
-        try:
-            p = prompts.summarize_news if c["section"] == "news" else prompts.summarize_community
-            card = gemini.ask_json(p(c, text, profile), temperature=0.3)
-        except gemini.GeminiError as ex:
-            log("summary failed:", c["title"][:60], ex)
-            state["seen"].pop(c["id"], None)  # retry next run
-            continue
-        if not isinstance(card, dict):
-            continue
-        item = build_item(c, d, card, now)
-        new_items.append(item)
-        existing[item["id"]] = item
-        done[c["section"]] += 1
-        if item["term"]:
-            glossary[item["term"]["word"]] = s(item["term"].get("def_ka"), 300)
-        if item["section"] == "news":
-            upsert_model(board, card.get("model_info"), item)
-        log(f"+ [{item['category']}] {item['importance']} {item['title_ka']}")
+        queue.append({"cand": c, "decision": d})
+    queue.sort(key=lambda p: -int(p["decision"].get("importance") or 0))
+
+    new_items, left = [], []
+    for section in ("news", "community"):
+        todo = [p for p in queue if p["cand"]["section"] == section]
+        work, rest = todo[:MAX_SUMMARIES[section]], todo[MAX_SUMMARIES[section]:]
+        left += [p for p in rest if int(p["decision"].get("importance") or 0) >= 8][:10]  # keep only strong leftovers
+        for k in range(0, len(work), SUMMARY_BATCH):
+            batch = work[k:k + SUMMARY_BATCH]
+            if gemini.exhausted or time.time() - started > TIME_BUDGET:
+                left += batch
+                continue
+            entries = [(p["cand"], fetch.article_text(p["cand"])) for p in batch]
+            try:
+                res = gemini.ask_json(prompts.summarize_batch(section, entries, profile), temperature=0.3)
+            except gemini.GeminiError as ex:
+                log("summary batch failed:", ex)
+                left += batch
+                continue
+            cards = res.get("cards", []) if isinstance(res, dict) else res
+            cards = [x for x in cards if isinstance(x, dict)] if isinstance(cards, list) else []
+            by_id = {x.get("id"): x for x in cards}
+            for n, p in enumerate(batch):
+                card = by_id.get(p["cand"]["id"]) or (cards[n] if len(cards) == len(batch) else None)
+                if not card:
+                    left.append(p)
+                    continue
+                item = build_item(p["cand"], p["decision"], card, now)
+                new_items.append(item)
+                existing[item["id"]] = item
+                if item["term"]:
+                    glossary[item["term"]["word"]] = s(item["term"].get("def_ka"), 300)
+                if item["section"] == "news":
+                    upsert_model(board, card.get("model_info"), item)
+                log(f"+ [{item['category']}] {item['importance']} {item['title_ka']}")
+    state["pending_summaries"] = left
+    if left:
+        log(f"{len(left)} items wait for the next run (quota/time)")
 
     items = new_items + items
     items.sort(key=lambda i: i["added"], reverse=True)
@@ -321,7 +344,8 @@ def run(dry_run=False, now=None):
     items = [i for i in items if (parse_dt(i["added"]) or now) > cutoff]
     seen_cut = now - timedelta(days=45)
     state["seen"] = {k: v for k, v in state["seen"].items() if (parse_dt(v) or now) > seen_cut}
-    state["bootstrapped"] = True
+    if triaged or not cands:
+        state["bootstrapped"] = True
 
     save(DATA / "items.json", items)
     save(DATA / "leaderboard.json", board)

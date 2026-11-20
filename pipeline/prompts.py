@@ -62,22 +62,8 @@ Return JSON: {{"results": [{{"id": "...", "keep": true, "importance": 8, "big": 
 Include every candidate id exactly once."""
 
 
-def summarize_news(cand, text, profile):
-    return f"""You write cards for "AI News", a Georgian-language personal AI news app.
-
-READER PROFILE (use it for the "use_ka" field):
-{profile}
-
-{STYLE}
-
-SOURCE: {cand['source']}
-TITLE: {cand['title']}
-URL: {cand['url']}
-TEXT:
-{text[:9000]}
-
-Return JSON with these fields (all *_ka fields in Georgian):
-{{
+NEWS_FIELDS = """{
+  "id": "the item id, copied exactly",
   "title_ka": "headline that says what happened, max ~70 chars",
   "company": "company name in English, e.g. Anthropic",
   "product": "product name in English if it is about one product (e.g. 'Claude Code', 'ChatGPT', 'Gemini'), else ''",
@@ -86,38 +72,25 @@ Return JSON with these fields (all *_ka fields in Georgian):
   "why_ka": "one sentence: why it matters",
   "use_ka": "one concrete sentence: how THIS reader could use it in their retail data-analyst work (Excel, Power BI, Sheets, Power Automate, reports for branches, e-commerce, corporate sales) or in video editing. If there is really no use, say briefly who it is useful for.",
   "tldr_ka": "2 sentences: the whole story",
-  "whats_new": [{{"icon": "one emoji", "label": "short label like 'დაემატა:'", "text": "one sentence"}}],
+  "whats_new": [{"icon": "one emoji", "label": "short label like 'დაემატა:'", "text": "one sentence"}],
   "details_ka": ["2 short paragraphs with the most important details"],
-  "numbers": [{{"label": "Georgian label", "value": "short value like '2×', '$3 / 1M', '1M ტოკენი'"}}],
+  "numbers": [{"label": "Georgian label", "value": "short value like '2×', '$3 / 1M', '1M ტოკენი'"}],
   "todo_ka": "what the reader can do now to try it (e.g. 'ტერმინალში გაუშვი `claude update`'), or ''",
-  "term": {{"word": "one technical term from the text", "def_ka": "one-sentence simple Georgian explanation"}},
+  "term": {"word": "one technical term from the text", "def_ka": "one-sentence simple Georgian explanation"},
   "read_seconds": 40,
   "model_info": null
-}}
-3-5 items in whats_new, 2-4 items in numbers (only real numbers from the text; [] if none).
-If this is a launch of a NEW AI MODEL, fill model_info:
-{{"name": "GPT-6", "company": "OpenAI", "context": "1M", "price_in": "$/1M input tokens or ''", "price_out": "$/1M output tokens or ''", "best_for_ka": "short Georgian: what it's best at", "access_ka": "short Georgian: where available (ChatGPT, API...)"}}"""
+}
+3-5 items in whats_new, 0-4 items in numbers (only real numbers from the text).
+If the item is a launch of a NEW AI MODEL, fill model_info:
+{"name": "model name", "company": "...", "context": "e.g. 1M", "price_in": "$ per 1M input tokens or ''", "price_out": "$ per 1M output tokens or ''", "best_for_ka": "short Georgian: what it's best at", "access_ka": "short Georgian: where available"}"""
 
 
-def summarize_community(cand, text, profile):
-    topics = ", ".join(f"{k} ({v})" for k, v in COMMUNITY_TOPICS.items())
-    return f"""You write cards for the Community tab of "AI News", a Georgian-language personal AI news app.
-The Community tab shows what real people build and do with AI, so the reader can steal ideas.
-
-READER PROFILE (use it for the "use_ka" field):
-{profile}
-
-{STYLE}
-
-SOURCE: {cand['source']}
-TITLE: {cand['title']}
-TEXT:
-{text[:7000]}
-
-Return JSON (all *_ka in Georgian):
-{{
+def _comm_fields():
+    topics = ", ".join(COMMUNITY_TOPICS)
+    return """{
+  "id": "the item id, copied exactly",
   "title_ka": "what they built/did, max ~70 chars",
-  "topic": "one of: {topics}",
+  "topic": "one of: %s",
   "built_ka": "1-2 sentences: what they built or did and the result",
   "tools": ["tools/models they used, in English"],
   "quote_ka": "the single most useful insight or tip from the post, translated (short), or ''",
@@ -126,9 +99,37 @@ Return JSON (all *_ka in Georgian):
   "tldr_ka": "2 sentences summary",
   "details_ka": ["1-2 short paragraphs: how it works"],
   "steps_ka": ["2-4 short steps to try the same thing"],
-  "term": {{"word": "one technical term", "def_ka": "one-sentence Georgian explanation"}},
+  "term": {"word": "one technical term", "def_ka": "one-sentence Georgian explanation"},
   "read_seconds": 40
-}}"""
+}""" % topics
+
+
+def summarize_batch(section, entries, profile):
+    """entries: list of (cand, text). One Gemini call writes all cards."""
+    blocks = []
+    for c, text in entries:
+        blocks.append(f"=== ITEM id={c['id']}\nSOURCE: {c['source']}\nTITLE: {c['title']}\nURL: {c['url']}\nTEXT:\n{text[:3500]}")
+    if section == "news":
+        intro = 'You write news cards for "AI News", a Georgian-language personal AI news app.'
+        fields = NEWS_FIELDS
+    else:
+        intro = ('You write cards for the Community tab of "AI News", a Georgian-language personal AI news app. '
+                 "It shows what real people build and do with AI, so the reader can steal ideas.")
+        fields = _comm_fields()
+    return f"""{intro}
+
+READER PROFILE (use it for the "use_ka" field):
+{profile}
+
+{STYLE}
+
+Write one card for EACH item below. Each card uses only facts from its own item.
+Every card is a JSON object like this (all *_ka fields in Georgian):
+{fields}
+
+Return JSON: {{"cards": [card, card, ...]}} with exactly one card per item, in the same order.
+
+{chr(10).join(blocks)}"""
 
 
 def weekly(items):

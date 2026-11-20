@@ -162,49 +162,53 @@ def _reddit_auth():
     return _reddit_token
 
 
-def fetch_subreddit(sub, opts, per_sub=5):
-    src = {"name": f"Reddit · r/{sub}"}
+def _reddit_posts(subs, limit=60):
+    """Top posts of the day across several subreddits in ONE request (multireddit),
+    so Reddit doesn't rate-limit us for 35 separate calls."""
+    path = "+".join(subs)
     token = _reddit_auth()
-    out = []
     if token:
-        data = get(f"https://oauth.reddit.com/r/{sub}/top", params={"t": "day", "limit": 10},
+        data = get(f"https://oauth.reddit.com/r/{path}/top", params={"t": "day", "limit": limit},
                    headers={"Authorization": f"bearer {token}"}).json()
-        posts = [c["data"] for c in data.get("data", {}).get("children", [])]
-        for p in posts:
+        for ch in data.get("data", {}).get("children", []):
+            p = ch["data"]
             if p.get("stickied") or p.get("over_18"):
                 continue
-            title, body = p.get("title", ""), (p.get("selftext") or "")[:3000]
-            if not opts.get("ai_only") and not mentions_ai(title + " " + body):
-                continue
-            url = "https://www.reddit.com" + p.get("permalink", "")
-            created = datetime.fromtimestamp(p.get("created_utc", time.time()), timezone.utc).isoformat()
-            out.append(_cand(src, url, title, body, created, p.get("score"), section="community",
-                             comments=p.get("num_comments")))
-            if len(out) >= per_sub:
-                break
+            yield {"sub": p.get("subreddit", ""), "title": p.get("title", ""),
+                   "body": (p.get("selftext") or "")[:3000], "url": "https://www.reddit.com" + p.get("permalink", ""),
+                   "published": datetime.fromtimestamp(p.get("created_utc", time.time()), timezone.utc).isoformat(),
+                   "score": p.get("score"), "comments": p.get("num_comments")}
     else:
-        feed = feedparser.parse(get(f"https://www.reddit.com/r/{sub}/top/.rss", params={"t": "day"}).content)
-        for e in feed.entries[:10]:
-            title = e.get("title", "")
+        feed = feedparser.parse(get(f"https://www.reddit.com/r/{path}/top/.rss",
+                                    params={"t": "day", "limit": limit}).content)
+        for e in feed.entries:
+            sub = (e.get("tags") or [{}])[0].get("term", "") if e.get("tags") else ""
             body = clean_text(e.content[0].get("value", "") if e.get("content") else "", 3000)
-            if not opts.get("ai_only") and not mentions_ai(title + " " + body):
-                continue
-            out.append(_cand(src, e.get("link"), title, body, _entry_date(e), section="community"))
-            if len(out) >= per_sub:
-                break
-    return out
+            yield {"sub": sub, "title": e.get("title", ""), "body": body, "url": e.get("link"),
+                   "published": _entry_date(e), "score": None, "comments": None}
 
 
-def fetch_reddit():
-    out, failed = [], 0
-    for sub, opts in SUBREDDITS.items():
+def fetch_reddit(per_sub=4):
+    ai_subs = [s for s, o in SUBREDDITS.items() if o.get("ai_only")]
+    other_subs = [s for s, o in SUBREDDITS.items() if not o.get("ai_only")]
+    out = []
+    for n, (subs, need_ai) in enumerate(((ai_subs, False), (other_subs, True))):
+        if n:
+            time.sleep(4)
         try:
-            out += fetch_subreddit(sub, opts)
+            count = {}
+            for p in _reddit_posts(subs):
+                if need_ai and not mentions_ai(p["title"] + " " + p["body"]):
+                    continue
+                if count.get(p["sub"], 0) >= per_sub or not p["url"]:
+                    continue
+                count[p["sub"]] = count.get(p["sub"], 0) + 1
+                src = {"name": f"Reddit · r/{p['sub']}" if p["sub"] else "Reddit"}
+                out.append(_cand(src, p["url"], p["title"], p["body"], p["published"], p["score"],
+                                 section="community", comments=p["comments"]))
         except Exception as ex:  # noqa: BLE001
-            failed += 1
-            log(f"reddit r/{sub} failed: {ex}")
-        time.sleep(1.2)
-    log(f"reddit: {len(out)} posts, {failed} subs failed")
+            log(f"reddit ({'work' if need_ai else 'AI'} subs) failed: {ex}")
+    log(f"reddit: {len(out)} posts")
     return out
 
 

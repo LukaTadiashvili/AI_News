@@ -47,19 +47,25 @@ def fake_ask(prompt, temperature=0.3, max_tokens=8192):
             {"id": ids["I automated DAX with Claude"], "keep": True, "importance": 7, "category": "community",
              "topic": "analytics"},
         ]}
-    if "Community tab" in prompt:
-        return {"title_ka": "DAX ავტომატიზაცია Claude-ით", "topic": "analytics", "built_ka": "ააწყო",
-                "tools": ["Claude", "Power BI"], "use_ka": "შენთვის", "why_ka": "რატომ", "tldr_ka": "მოკლედ",
-                "details_ka": ["a"], "steps_ka": ["1", "2"], "term": {"word": "DAX", "def_ka": "ფორმულების ენა"}}
+    import re
+    items = re.findall(r"=== ITEM id=(\w+)\nSOURCE: [^\n]*\nTITLE: ([^\n]*)", prompt)
     if "weekly recap" in prompt:
         return {"title_ka": "კვირა", "intro_ka": "შესავალი", "top": []}
-    gpt = "TITLE: Introducing GPT-6" in prompt
-    title = "GPT-6 გამოვიდა" if gpt else "Claude Code 2.4"
-    return {"title_ka": title, "company": "OpenAI", "bullets": ["ა", "ბ", "გ"], "why_ka": "მნიშვნელოვანია",
-            "use_ka": "გამოიყენე", "tldr_ka": "ორი წინადადება", "whats_new": [{"icon": "⚡", "label": "x", "text": "y"}],
-            "details_ka": ["p1", "p2"], "numbers": [{"label": "ფასი", "value": "$1"}], "todo_ka": "",
-            "term": {"word": "ტოკენი", "def_ka": "ტექსტის ნაწილი"}, "read_seconds": 45,
-            "model_info": {"name": "GPT-6", "company": "OpenAI", "context": "1M"} if gpt else None}
+    cards = []
+    for iid, title in items:
+        if "Community tab" in prompt:
+            cards.append({"id": iid, "title_ka": "DAX ავტომატიზაცია Claude-ით", "topic": "analytics", "built_ka": "ააწყო",
+                          "tools": ["Claude", "Power BI"], "use_ka": "შენთვის", "why_ka": "რატომ", "tldr_ka": "მოკლედ",
+                          "details_ka": ["a"], "steps_ka": ["1", "2"], "term": {"word": "DAX", "def_ka": "ფორმულების ენა"}})
+            continue
+        gpt = title == "Introducing GPT-6"
+        cards.append({"id": iid, "title_ka": "GPT-6 გამოვიდა" if gpt else "Claude Code 2.4", "company": "OpenAI",
+                      "bullets": ["ა", "ბ", "გ"], "why_ka": "მნიშვნელოვანია", "use_ka": "გამოიყენე", "tldr_ka": "ორი წინადადება",
+                      "whats_new": [{"icon": "⚡", "label": "x", "text": "y"}], "details_ka": ["p1", "p2"],
+                      "numbers": [{"label": "ფასი", "value": "$1"}], "todo_ka": "",
+                      "term": {"word": "ტოკენი", "def_ka": "ტექსტის ნაწილი"}, "read_seconds": 45,
+                      "model_info": {"name": "GPT-6", "company": "OpenAI", "context": "1M"} if gpt else None})
+    return {"cards": cards}
 
 
 def test_full_run():
@@ -107,6 +113,15 @@ def test_full_run():
     main.run(now=datetime(2026, 11, 20, 13, 35, tzinfo=TZ))
     digests = [t for t in sent if t.startswith("📰")]
     assert len(digests) == 1, sent
+    # Quota used up: nothing crashes, items wait in the queue, files still saved.
+    def no_quota(*a, **k):
+        raise gemini.GeminiQuotaExhausted("used up")
+    main.gemini.ask_json = no_quota
+    state = json.loads(main.STATE_FILE.read_text())
+    state["pending_summaries"] = [{"cand": fake_community()[0] | {"id": "zz1"}, "decision": {"keep": True, "importance": 9}}]
+    main.save(main.STATE_FILE, state)
+    main.run(now=datetime(2026, 11, 20, 20, 5, tzinfo=TZ))
+    assert len(json.loads(main.STATE_FILE.read_text())["pending_summaries"]) == 1
     print("OK", sent)
 
 
