@@ -1,1 +1,46 @@
-[]
+[
+ {
+  "name": "Muse Spark 1.1",
+  "company": "Meta",
+  "context": "1M",
+  "price_in": "",
+  "price_out": "",
+  "best_for_ka": "აგენტური დავალებები და კოდის წერა",
+  "access_ka": "Meta AI აპი და meta.ai",
+  "released": "2026-11-20",
+  "item": "08e9aa519f83"
+ },
+ {
+  "name": "Mistral Large 4 (Le Chonk)",
+  "company": "Mistral",
+  "context": "",
+  "price_in": "",
+  "price_out": "",
+  "best_for_ka": "კოდირება, კიბერუსაფრთხოება და რთული მსჯელობა",
+  "access_ka": "ღია წონები (Open Weights) თვით-მასპინძლობისთვის",
+  "released": "2026-11-20",
+  "item": "8ccea7e89b70"
+ },
+ {
+  "name": "Genie 4",
+  "company": "Google",
+  "context": "",
+  "price_in": "",
+  "price_out": "",
+  "best_for_ka": "ინტერაქტიული ციფრული სამყაროების გენერაცია და რედაქტირება",
+  "access_ka": "Google AI Ultra აბონენტები Project Genie-ს ვებსაიტზე",
+  "released": "2026-11-20",
+  "item": "50e3ea47cbae"
+ },
+ {
+  "name": "Gemini 4 Neon",
+  "company": "Google",
+  "context": "1M",
+  "price_in": "$3",
+  "price_out": "$15",
+  "best_for_ka": "ფინანსური ანალიზი, ცხრილებთან მუშაობა და პროგრამირება",
+  "access_ka": "Google AI Studio, Gemini API და ბიზნეს პლატფორმები",
+  "released": "2026-11-20",
+  "item": "b898a1b2127c"
+ }
+]
