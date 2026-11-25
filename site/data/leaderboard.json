@@ -1,5 +1,16 @@
 [
  {
+  "name": "GPT-6",
+  "company": "OpenAI",
+  "context": "",
+  "price_in": "",
+  "price_out": "",
+  "best_for_ka": "ცილების დიზაინი და რთული მსჯელობა",
+  "access_ka": "ხელმისაწვდომია შიდა მკვლევრებისთვის",
+  "released": "2026-11-25",
+  "item": "3c6728c1bfd1"
+ },
+ {
   "name": "Muse Spark 1.1",
   "company": "Meta",
   "context": "1M",
