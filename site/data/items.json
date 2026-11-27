@@ -1,5 +1,48 @@
 [
  {
+  "id": "944ed2fbb539",
+  "section": "community",
+  "category": "community",
+  "topic": "video",
+  "importance": 6,
+  "big": false,
+  "url": "https://www.producthunt.com/products/flurra",
+  "discussion": "",
+  "source": "Product Hunt",
+  "domain": "producthunt.com",
+  "company": "",
+  "product": "",
+  "version": "",
+  "published": "2026-11-25T16:34:30+00:00",
+  "added": "2026-11-27T04:12:40.796362+04:00",
+  "score": null,
+  "title_ka": "ვიდეოების მონტაჟი Claude-ისა და ChatGPT-ის საშუალებით",
+  "title_en": "Flurra",
+  "why_ka": "ვიდეო მონტაჟის რთული ხელსაწყოების ნაცვლად ცვლილებების გაკეთება პირდაპირ ჩატის ბრძანებებით არის შესაძლებელი.",
+  "use_ka": "ვიდეო მონტაჟისას შეგიძლიათ რუტინული ჭრა და მარტივი ცვლილებები Claude-ს ტექსტური პრომპტებით დაავალოთ.",
+  "tldr_ka": "Flurra გაძლევთ საშუალებას ვიდეოები ტექსტური მითითებებით დაარედაქტიროთ. ამისთვის პლატფორმა Claude-ს ან ChatGPT-ს იყენებს.",
+  "details_ka": [
+   "Flurra ვიდეო რედაქტირების პროცესს პოპულარულ ჩატბოტებთან აკავშირებს. მომხმარებელს შეუძლია პირდაპირ ჩატში აღწეროს, რა ცვლილებები სურს ვიდეოში."
+  ],
+  "term": {
+   "word": "Prompt-based editing",
+   "def_ka": "მედია ფაილების დამუშავება და რედაქტირება ბუნებრივი ენის ტექსტური ბრძანებების საშუალებით."
+  },
+  "read_seconds": 35,
+  "built_ka": "შეიქმნა Flurra — ხელსაწყო, რომელიც ვიდეოების დასარედაქტირებლად Claude-სა და ChatGPT-ს იყენებს.",
+  "tools": [
+   "Flurra",
+   "Claude",
+   "ChatGPT"
+  ],
+  "quote_ka": "",
+  "steps_ka": [
+   "გახსენით Flurra-ს ბმული Product Hunt-ზე",
+   "ატვირთეთ ვიდეო მასალა",
+   "მისწერეთ Claude-ს ან ChatGPT-ს, რა ცვლილებების შეტანა გსურთ"
+  ]
+ },
+ {
   "id": "15aa96a95483",
   "section": "news",
   "category": "tools",
